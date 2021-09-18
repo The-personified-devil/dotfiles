@@ -1,4 +1,5 @@
 local cmp = require("cmp")
+local luasnip = require("luasnip")
 
 local check_back_space = function()
 	local col = vim.fn.col(".") - 1
@@ -18,11 +19,13 @@ cmp.setup({
 			end
 		end,
 
-		["<Tab>"] = function(fallback)
+		["<Tab>"] = function()
 			if vim.fn.pumvisible() == 1 then
 				vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, true, true), "n")
+			elseif luasnip.expand_or_jumpable() then
+				luasnip.expand_or_jump()
 			elseif check_back_space() then
-				fallback()
+				vim.fn.feedkeys("\t", "n")
 			else
 				cmp.complete()
 			end
@@ -43,7 +46,7 @@ cmp.setup({
 	},
 	snippet = {
 		expand = function(arg)
-			require("luasnip").lsp_expand(arg.body)
+			luasnip.lsp_expand(arg.body)
 		end,
 	},
 })

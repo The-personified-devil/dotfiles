@@ -1,4 +1,5 @@
 local nvim_lsp = require("lspconfig")
+local util = vim.lsp.util
 
 local on_attach = function(client, bufnr)
 	local function buf_set_keymap(...)
@@ -26,6 +27,8 @@ local on_attach = function(client, bufnr)
 	buf_set_keymap("n", "<leader>wa", "<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>", opts)
 	buf_set_keymap("n", "<leader>wr", "<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>", opts)
 	buf_set_keymap("n", "<leader>wl", "<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>", opts)
+
+	buf_set_keymap("n", "<leader>bb", "<cmd>lua print(vim.inspect(vim.lsp.codelens.get(" .. bufnr .. ")))<CR>", opts)
 
 	if client.resolved_capabilities.document_formatting then
 		buf_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.formatting()<CR>", opts)
@@ -61,6 +64,14 @@ local servers = {
 				checkOnSave = {
 					enable = false,
 				},
+				lens = {
+					enable = true,
+					methodReferences = true,
+					references = true,
+					run = true,
+					debug = true,
+					implementations = true,
+				},
 			},
 		},
 	},
@@ -87,8 +98,44 @@ local servers = {
 	},
 }
 
+local function handler(_, result, ctx, config)
+	-- error(vim.inspect(result))
+	config = config or {}
+	config.focus_id = ctx.method
+
+	if not (result and result.contents) then
+		return
+	end
+
+	local markdown_lines = util.convert_input_to_markdown_lines(result.contents)
+	markdown_lines = util.trim_empty_lines(markdown_lines)
+
+	if vim.tbl_isempty(markdown_lines) then
+		return
+	end
+
+	table.insert(markdown_lines, "")
+	table.insert(markdown_lines, "Hover actions:")
+	for _, action in ipairs(result.actions) do
+		for i, command in ipairs(action.commands) do
+			table.insert(markdown_lines, i .. ": " .. command.title)
+		end
+	end
+
+	return util.open_floating_preview(markdown_lines, "markdown", config)
+end
+
+function Callfuck()
+	vim.lsp.buf_request(0, "textDocument/hover", vim.lsp.util.make_position_params(), handler)
+end
+
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
+
+capabilities.experimental = {
+	hoverActions = true,
+	-- hoverRange = true,
+}
 
 for lsp, conf in pairs(servers) do
 	local setup = {

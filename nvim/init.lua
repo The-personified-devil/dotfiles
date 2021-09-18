@@ -111,19 +111,30 @@ npairs.setup({
 	check_ts = true,
 	fast_wrap = {},
 })
-npairs.add_rules(require('nvim-autopairs.rules.endwise-lua'))
+npairs.add_rules(require("nvim-autopairs.rules.endwise-lua"))
 
 require("numb").setup()
 
-require'nvim-treesitter.configs'.setup {
-    textsubjects = {
-        enable = true,
-        keymaps = {
-            ['.'] = 'textsubjects-smart',
-            [';'] = 'textsubjects-container-outer',
-        }
-    },
-}
+require("nvim-treesitter.configs").setup({
+	textsubjects = {
+		enable = true,
+		keymaps = {
+			["."] = "textsubjects-smart",
+			[";"] = "textsubjects-container-outer",
+		},
+	},
+})
+
+function Meson_add_file(file, target)
+	local Path = require("plenary.path")
+
+	local cur = Path:new(file):absolute()
+	local root = Path.path.root(cur)
+	repeat
+    		cur = Path:parent()
+		print(Path)
+  	until cur == root
+end
 
 vim.cmd([[
     command! -complete=file -nargs=* DebugC lua start_c_debugger({<f-args>}, "gdb")
