@@ -1,54 +1,62 @@
 local nvim_lsp = require("lspconfig")
 local util = vim.lsp.util
 
-local on_attach = function(client, bufnr)
-	local function buf_set_keymap(...)
-		vim.api.nvim_buf_set_keymap(bufnr, ...)
-	end
+local on_attach = function(_, bufnr)
+    local function map(...)
+        vim.keymap.set(...)
+    end
 
-	local opts = { noremap = true, silent = true }
-	buf_set_keymap("n", "gD", "<Cmd>lua vim.lsp.buf.declaration()<CR>", opts)
-	buf_set_keymap("n", "gd", "<Cmd>lua vim.lsp.buf.definition()<CR>", opts)
-	buf_set_keymap("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts)
-	buf_set_keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts)
+    local opts = { remap = false, silent = true, buffer = bufnr }
 
-	buf_set_keymap("n", "<leader>D", "<cmd>lua vim.lsp.buf.type_definition()<CR>", opts)
+    map("n", "gD", vim.lsp.buf.declaration, opts)
 
-	buf_set_keymap("n", "K", "<Cmd>lua vim.lsp.buf.hover()<CR>", opts)
-	buf_set_keymap("n", "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", opts)
+    map("n", "gd", vim.lsp.buf.definition, opts)
 
-	buf_set_keymap("n", "[d", "<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>", opts)
-	buf_set_keymap("n", "]d", "<cmd>lua vim.lsp.diagnostic.goto_next()<CR>", opts)
-	buf_set_keymap("n", "<leader>e", "<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>", opts)
+    map("n", "gi", vim.lsp.buf.implementation, opts)
+    -- map("n", "gr", vim.lsp.buf.references, opts)
 
-	buf_set_keymap("n", "<leader>r", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
-	buf_set_keymap("n", "<leader>x", "<cmd>lua vim.lsp.buf.code_action()<CR>", opts)
+    map("n", "<leader>D", vim.lsp.buf.type_definition, opts)
 
-	buf_set_keymap("n", "<leader>wa", "<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>", opts)
-	buf_set_keymap("n", "<leader>wr", "<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>", opts)
-	buf_set_keymap("n", "<leader>wl", "<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>", opts)
+    map("n", "K", vim.lsp.buf.hover, opts)
+    map("n", "<C-k>", vim.lsp.buf.signature_help, opts)
 
-	buf_set_keymap("n", "<leader>bb", "<cmd>lua print(vim.inspect(vim.lsp.codelens.get(" .. bufnr .. ")))<CR>", opts)
+    map("n", "<leader>r", vim.lsp.buf.rename, opts)
+    map("n", "<leader>x", vim.lsp.buf.code_action, opts)
 
-	if client.resolved_capabilities.document_formatting then
-		buf_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.formatting()<CR>", opts)
-	elseif client.resolved_capabilities.document_range_formatting then
-		buf_set_keymap("n", "<leader>f", "<cmd>lua vim.lsp.buf.range_formatting()<CR>", opts)
-	end
+    map("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts)
+    map("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts)
+    map("n", "<leader>wl", function()
+        print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+    end, opts)
 
-	if client.resolved_capabilities.document_highlight then
-		vim.cmd([[
-      			hi LspReferenceText cterm=bold gui=underline cterm=underline
-      			hi LspReferenceRead cterm=bold gui=underline cterm=underline
-      			hi LspReferenceWrite cterm=bold gui=underline cterm=underline
+    map("n", "<leader>bb", function()
+        print(vim.inspect(vim.lsp.codelens.get(" .. bufnr .. ")))
+    end, opts)
 
-      			augroup lsp_document_highlight
-        			autocmd! * <buffer>
-        			autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
-        			autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
-      			augroup END
-    		]])
-	end
+    map("n", "<leader>f", vim.lsp.buf.format, opts)
+    map("v", "<leader>f", vim.lsp.buf.range_formatting, opts)
+
+    vim.api.nvim_set_hl(0, "LspReferenceText", { underline = true })
+    vim.api.nvim_set_hl(0, "LspReferenceRead", { underline = true })
+    vim.api.nvim_set_hl(0, "LspReferenceWrite", { underline = true })
+
+    local group = vim.api.nvim_create_augroup("lsp_document_highlight", {})
+
+    vim.api.nvim_clear_autocmds({ group = group, buffer = bufnr })
+
+    vim.api.nvim_create_autocmd("CursorHold", {
+        group = group,
+        buffer = bufnr,
+        callback = function()
+            vim.lsp.buf.document_highlight()
+        end,
+    })
+
+    vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+        group = group,
+        buffer = bufnr,
+        callback = vim.lsp.buf.clear_references,
+    })
 end
 
 local runtime_path = vim.split(package.path, ";")
@@ -56,97 +64,96 @@ table.insert(runtime_path, "lua/?.lua")
 table.insert(runtime_path, "lua/?/init.lua")
 
 local servers = {
-	clangd = {},
-	pyright = {},
-	rust_analyzer = {
-		settings = {
-			["rust-analyzer"] = {
-				checkOnSave = {
-					enable = false,
-				},
-				lens = {
-					enable = true,
-					methodReferences = true,
-					references = true,
-					run = true,
-					debug = true,
-					implementations = true,
-				},
-			},
-		},
-	},
-	sumneko_lua = {
-		cmd = { "lua-language-server", "-E", "/usr/share/lua-language-server/main.lua" },
-		settings = {
-			Lua = {
-				runtime = {
-					version = "LuaJIT",
-					path = runtime_path,
-				},
-				diagnostics = {
-					globals = { "vim" },
-				},
-				workspace = {
-					-- Make the server aware of Neovim runtime files
-					library = vim.api.nvim_get_runtime_file("", true),
-				},
-				telemetry = {
-					enable = false,
-				},
-			},
-		},
-	},
+    clangd = { cmd = { "clangd", "-completion-style=detailed" } },
+    pyright = {},
+    rust_analyzer = {
+        settings = {
+            ["rust-analyzer"] = {
+                lens = {
+                    enable = true,
+                    methodReferences = true,
+                    references = true,
+                    run = true,
+                    debug = true,
+                    implementations = true,
+                },
+            },
+        },
+    },
+    ltex = { settings = { ltex = { language = "de-DE" } } },
+    texlab = { settings = { texlab = { latexindent = { modifyLineBreaks = true } } } },
+    sumneko_lua = {
+        cmd = { "lua-language-server", "-E", "/usr/share/lua-language-server/main.lua" },
+        settings = {
+            Lua = {
+                runtime = {
+                    version = "LuaJIT",
+                    path = runtime_path,
+                },
+                diagnostics = {
+                    globals = { "vim" },
+                },
+                workspace = {
+                    -- Make the server aware of Neovim runtime files
+                    library = vim.api.nvim_get_runtime_file("", true),
+                },
+                telemetry = {
+                    enable = false,
+                },
+            },
+        },
+    },
+    hls = {},
 }
 
 local function handler(_, result, ctx, config)
-	-- error(vim.inspect(result))
-	config = config or {}
-	config.focus_id = ctx.method
+    config = config or {}
+    config.focus_id = ctx.method
 
-	if not (result and result.contents) then
-		return
-	end
+    if not (result and result.contents) then
+        return
+    end
 
-	local markdown_lines = util.convert_input_to_markdown_lines(result.contents)
-	markdown_lines = util.trim_empty_lines(markdown_lines)
+    local markdown_lines = util.convert_input_to_markdown_lines(result.contents)
+    markdown_lines = util.trim_empty_lines(markdown_lines)
 
-	if vim.tbl_isempty(markdown_lines) then
-		return
-	end
+    if vim.tbl_isempty(markdown_lines) then
+        return
+    end
 
-	table.insert(markdown_lines, "")
-	table.insert(markdown_lines, "Hover actions:")
-	for _, action in ipairs(result.actions) do
-		for i, command in ipairs(action.commands) do
-			table.insert(markdown_lines, i .. ": " .. command.title)
-		end
-	end
+    table.insert(markdown_lines, "")
+    table.insert(markdown_lines, "Hover actions:")
+    for _, action in ipairs(result.actions) do
+        for i, command in ipairs(action.commands) do
+            table.insert(markdown_lines, i .. ": " .. command.title)
+        end
+    end
 
-	return util.open_floating_preview(markdown_lines, "markdown", config)
+    return util.open_floating_preview(markdown_lines, "markdown", config)
 end
 
 function Callfuck()
-	vim.lsp.buf_request(0, "textDocument/hover", vim.lsp.util.make_position_params(), handler)
+    vim.lsp.buf_request(0, "textDocument/hover", vim.lsp.util.make_position_params(), handler)
 end
 
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 capabilities.experimental = {
-	hoverActions = true,
-	-- hoverRange = true,
+    hoverActions = true,
+    -- hoverRange = true,
 }
 
 for lsp, conf in pairs(servers) do
-	local setup = {
-		on_attach = on_attach,
-		capabilities = capabilities,
-	}
+    local setup = {
+        on_attach = on_attach,
+        capabilities = capabilities,
+    }
 
-	for k, v in pairs(conf) do
-		setup[k] = v
-	end
-	-- Use extend maybe
+    for k, v in pairs(conf) do
+        setup[k] = v
+    end
+    -- Use extend maybe
 
-	nvim_lsp[lsp].setup(setup)
+    nvim_lsp[lsp].setup(setup)
 end

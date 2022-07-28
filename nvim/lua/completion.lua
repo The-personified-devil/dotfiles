@@ -1,58 +1,59 @@
-local cmp = require("cmp")
-local luasnip = require("luasnip")
-
-local check_back_space = function()
-	local col = vim.fn.col(".") - 1
-	return col == 0 or vim.fn.getline("."):sub(col, col):match("%s") ~= nil
-end
+local cmp, luasnip = require("cmp"), require("luasnip")
 
 cmp.setup({
-	mapping = {
-		["<C-e>"] = cmp.mapping.close(),
-		["<C-f>"] = cmp.mapping.scroll_docs(4),
-		["<C-d>"] = cmp.mapping.scroll_docs(-4),
-		["<C-Space>"] = cmp.mapping.complete(),
+    mapping = {
+        ["<C-e>"] = cmp.mapping.close(),
+        ["<C-f>"] = cmp.mapping.scroll_docs(4),
+        ["<C-d>"] = cmp.mapping.scroll_docs(-4),
+        ["<C-Space>"] = cmp.mapping.complete(),
 
-		["<CR>"] = function()
-			if not cmp.confirm({ behavior = cmp.ConfirmBehavior.Insert, select = true }) then
-				vim.fn.feedkeys(require("nvim-autopairs").autopairs_cr(), "n")
-			end
-		end,
+        ["<C-CR>"] = cmp.mapping.confirm({ select = true }),
 
-		["<Tab>"] = function()
-			if vim.fn.pumvisible() == 1 then
-				vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-n>", true, true, true), "n")
-			elseif luasnip.expand_or_jumpable() then
-				luasnip.expand_or_jump()
-			elseif check_back_space() then
-				vim.fn.feedkeys("\t", "n")
-			else
-				cmp.complete()
-			end
-		end,
+        ["<C-n>"] = cmp.mapping(function()
+            if cmp.visible() then
+                cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+                luasnip.expand_or_jump()
+            else
+                cmp.complete()
+            end
+        end, {
+            "i",
+            "s",
+        }),
 
-		["<S-Tab>"] = function(fallback)
-			if vim.fn.pumvisible() == 1 then
-				vim.fn.feedkeys(vim.api.nvim_replace_termcodes("<C-p>", true, true, true), "n")
-			else
-				fallback()
-			end
-		end,
-	},
-	sources = {
-		{ name = "path" },
-		{ name = "buffer" },
-		{ name = "nvim_lsp" },
-	},
-	snippet = {
-		expand = function(arg)
-			luasnip.lsp_expand(arg.body)
-		end,
-	},
+        ["<C-i>"] = cmp.mapping(function()
+            if cmp.visible() then
+                cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+                luasnip.jump(-1)
+            end
+        end, {
+            "i",
+            "s",
+        }),
+    },
+    -- use groups
+    sources = cmp.config.sources({
+        { name = "nvim_lua" },
+        { name = "nvim_lsp" },
+        { name = "path" },
+        { name = "neorg" },
+    }, {
+        { name = "buffer" },
+    }),
+    snippet = {
+        expand = function(arg)
+            luasnip.lsp_expand(arg.body)
+        end,
+    },
+    experimental = {
+        ghost_text = true,
+    },
 })
 
---[[ elseif vim.fn['vsnip#available']() == 1 then
-      	vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<Plug>(vsnip-expand-or-jump)', true, true, true), '') ]]
-
-vim.api.nvim_set_keymap("i", "<C-I>", "<cmd>lua require('luasnip').jump(1)<CR>", {})
-vim.api.nvim_set_keymap("i", "<C-F>", "<cmd>lua require('luasnip').jump(1)<CR>", {})
+cmp.setup.cmdline("/", {
+    sources = {
+        { name = "buffer" },
+    },
+})

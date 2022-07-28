@@ -1,155 +1,115 @@
-require("plugins")
-require("lsp")
-require("ts")
-require("completion")
-require("filemgr")
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_node_provider = 0
+
+-- vim.g.loaded_gzip              = 1
+-- vim.g.loaded_tar               = 1
+-- vim.g.loaded_tarPlugin         = 1
+-- vim.g.loaded_zip               = 1
+-- vim.g.loaded_zipPlugin         = 1
+-- vim.g.loaded_getscript         = 1
+-- vim.g.loaded_getscriptPlugin   = 1
+-- vim.g.loaded_vimball           = 1
+-- vim.g.loaded_vimballPlugin     = 1
+-- vim.g.loaded_matchit           = 1
+-- vim.g.loaded_matchparen        = 1
+-- vim.g.loaded_2html_plugin      = 1
+-- vim.g.loaded_logiPat           = 1
+-- vim.g.loaded_rrhelper          = 1
+-- vim.g.loaded_netrw             = 1
+-- vim.g.loaded_netrwPlugin       = 1
+-- vim.g.loaded_netrwSettings     = 1
+-- vim.g.loaded_netrwFileHandlers = 1
 
 vim.g.mapleader = " "
+vim.opt.mouse = ""
 
-require("lualine").setup({ options = { theme = "gruvbox" } })
+vim.keymap.set("i", "<Tab>", "<Tab>", { silent = true })
 
-require("dapui").setup({
-	icons = {
-		expanded = "▾",
-		collapsed = "▸",
-	},
-	mappings = {
-		-- Use a table to apply multiple mappings
-		expand = { "<CR>", "<2-LeftMouse>" },
-		open = "o",
-		remove = "d",
-		edit = "e",
-	},
-	sidebar = {
-		open_on_start = true,
-		elements = {
-			-- You can change the order of elements in the sidebar
-			"scopes",
-			"breakpoints",
-			"stacks",
-			"watches",
-		},
-		width = 40,
-		position = "left", -- Can be "left" or "right"
-	},
-	tray = {
-		open_on_start = true,
-		elements = {
-			"repl",
-		},
-		height = 10,
-		position = "bottom", -- Can be "bottom" or "top"
-	},
-	floating = {
-		max_height = nil, -- These can be integers or a float between 0 and 1.
-		max_width = nil, -- Floats will be treated as percentage of your screen.
-	},
+-- Move into plugins.lua ?
+require("impatient").enable_profile()
+
+vim.opt.eventignore:append({ "CursorHold", "CursorHoldI" })
+
+vim.g.cursorhold_updatetime = 4000
+
+local group = vim.api.nvim_create_augroup("fix_cursorhold", {})
+vim.api.nvim_clear_autocmds({ group = group })
+
+local cursorhold_timer = vim.loop.new_timer()
+local cursorholdi_timer = vim.loop.new_timer()
+
+vim.api.nvim_create_autocmd("CursorMoved", {
+    group = group,
+    callback = function()
+        cursorhold_timer:start(
+            vim.g.cursorhold_updatetime,
+            0,
+            vim.schedule_wrap(function()
+                vim.opt.eventignore:remove("CursorHold")
+                vim.api.nvim_exec_autocmds("CursorHold", { modeline = false })
+                vim.opt.eventignore:append("CursorHold")
+            end)
+        )
+    end,
 })
 
-dap = require("dap")
-dap.adapters.cpp = {
-	type = "executable",
-	stopOnEntry = true,
-	attach = {
-		pidProperty = "pid",
-		pidSelect = "ask",
-	},
-	command = "lldb-vscode",
-	env = {
-		LLDB_LAUNCH_FLAG_LAUNCH_IN_TTY = "YES",
-	},
-	name = "lldb",
-}
-
-local last_gdb_config
-
-start_c_debugger = function(args, mi_mode, mi_debugger_path)
-	if args and #args > 0 then
-		last_gdb_config = {
-			type = "cpp",
-			name = args[1],
-			request = "launch",
-			program = table.remove(args, 1),
-			args = args,
-			cwd = vim.fn.getcwd(),
-			env = {}, -- environment variables are set via `ENV_VAR_NAME=value` pairs
-			externalConsole = true,
-			MIMode = mi_mode or "gdb",
-			MIDebuggerPath = mi_debugger_path,
-		}
-	end
-
-	if not last_gdb_config then
-		print('No binary to debug set! Use ":DebugC <binary> <args>"')
-		return
-	end
-
-	dap.run(last_gdb_config)
-	-- dap.repl.open()
-end
-
-require("nvim-web-devicons").setup({
-	override = {
-		lir_folder_icon = {
-			icon = "",
-			color = "#7ebae4",
-			name = "LirFolderNode",
-		},
-	},
+vim.api.nvim_create_autocmd("CursorMovedI", {
+    group = group,
+    callback = function()
+        cursorholdi_timer:start(
+            vim.g.cursorhold_updatetime,
+            0,
+            vim.schedule_wrap(function()
+                vim.opt.eventignore:remove("CursorHoldI")
+                vim.api.nvim_exec_autocmds("CursorHoldI", { modeline = false })
+                vim.opt.eventignore:append("CursorHoldI")
+            end)
+        )
+    end,
 })
 
-require("trouble").setup()
+require("plugins")
+-- require("packer_compiled")
 
-require("indent_blankline").setup({
-	char = "|",
-	show_trailing_blankline_indent = false,
-	buftype_exclude = { "terminal", "help" },
-})
+-- Prevent screen shake from plugins initializing
+vim.o.showtabline = 2
+vim.o.signcolumn = "yes"
 
-local npairs = require("nvim-autopairs")
-npairs.setup({
-	check_ts = true,
-	fast_wrap = {},
-})
-npairs.add_rules(require("nvim-autopairs.rules.endwise-lua"))
+-- Use first screen draw autocmd?
+local lazytime = 50
 
-require("numb").setup()
+local ui = require("modules.ui")
+vim.defer_fn(ui.load_basic, lazytime)
+vim.defer_fn(ui.load_fancy, lazytime + 30)
 
-require("nvim-treesitter.configs").setup({
-	textsubjects = {
-		enable = true,
-		keymaps = {
-			["."] = "textsubjects-smart",
-			[";"] = "textsubjects-container-outer",
-		},
-	},
-})
+vim.fn.sign_define(
+    "DiagnosticSignError",
+    { text = "", texthl = "DiagnosticSignError", linehl = "", numhl = "" }
+)
+vim.fn.sign_define(
+    "DiagnosticSignWarn",
+    { text = "", texthl = "DiagnosticSignWarn", linehl = "", numhl = "" }
+)
+vim.fn.sign_define(
+    "DiagnosticSignHint",
+    { text = "", texthl = "DiagnosticSignHint", linehl = "", numhl = "" }
+)
+vim.fn.sign_define(
+    "DiagnosticSignInfo",
+    { text = "", texthl = "DiagnosticSignInfo", linehl = "", numhl = "" }
+)
 
-function Meson_add_file(file, target)
-	local Path = require("plenary.path")
+vim.diagnostic.config({ severity_sort = true })
 
-	local cur = Path:new(file):absolute()
-	local root = Path.path.root(cur)
-	repeat
-    		cur = Path:parent()
-		print(Path)
-  	until cur == root
-end
+local opts = { noremap = true, silent = true }
 
-vim.cmd([[
-    command! -complete=file -nargs=* DebugC lua start_c_debugger({<f-args>}, "gdb")
-]])
-
-vim.cmd([[
-  hi link TroubleSignError GruvboxRed
-  hi link TroubleSignHint GruvboxAqua
-  hi link TroubleSignWarning GruvboxYellow
-  hi link TroubleSignInformation GruvboxBlue
-  hi link TroubleFoldIcon GruvboxGreen
-  hi link TroubleCount GruvboxGreen
-]])
-
-vim.cmd("colorscheme gruvbox")
+vim.keymap.set("n", "[e", vim.diagnostic.goto_prev, opts)
+vim.keymap.set("n", "]e", vim.diagnostic.goto_next, opts)
+vim.keymap.set("n", "<leader>e", function()
+    vim.diagnostic.open_float(nil, { scope = "line" })
+end, opts)
 
 vim.o.termguicolors = true
 vim.o.foldenable = false

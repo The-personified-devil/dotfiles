@@ -1,8 +1,37 @@
 local opts = { noremap = true, silent = true }
 
-tele_builtin = require("telescope.builtin")
+local actions = require("telescope.actions")
+require("telescope").setup({
+    defaults = {
+        mappings = {
+            i = {
+                ["<esc>"] = actions.close,
+            },
+        },
+    },
+})
 
-set_keymap("n", "<leader>ff", "<CMD>lua tele_builtin.find_files()<CR>", opts)
-set_keymap("n", "<leader>fg", "<CMD>lua tele_builtin.live_grep()<CR>", opts)
-set_keymap("n", "<leader>fb", "<CMD>lua tele_builtin.buffers()<CR>", opts)
-set_keymap("n", "<leader>fh", "<CMD>lua tele_builtin.help_tags()<CR>", opts)
+vim.api.nvim_set_keymap(
+    "n",
+    "<leader>ff",
+    "<CMD>lua require('telescope.builtin').find_files()<CR>",
+    opts
+)
+vim.api.nvim_set_keymap(
+    "n",
+    "<leader>fg",
+    "<CMD>lua require('telescope.builtin').live_grep()<CR>",
+    opts
+)
+vim.api.nvim_set_keymap(
+    "n",
+    "<leader>fb",
+    "<CMD>lua require('telescope.builtin').buffers()<CR>",
+    opts
+)
+vim.api.nvim_set_keymap(
+    "n",
+    "<leader>fh",
+    "<CMD>lua require('telescope.builtin').help_tags()<CR>",
+    opts
+)
