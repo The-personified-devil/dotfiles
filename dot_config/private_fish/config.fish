@@ -14,7 +14,7 @@ fish_vi_key_bindings
 
 abbr --add ls exa
 
-set -Gx EDITOR nvim
+set -Ux EDITOR nvim
 
 zoxide init fish --cmd j | source
 starship init fish | source
