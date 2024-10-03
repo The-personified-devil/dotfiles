@@ -1,0 +1,28 @@
+{
+    "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+    "Lua.workspace.library": [
+        "/home/duck/.config/nvim",
+        "/etc/xdg/nvim",
+        "/home/duck/.local/share/nvim/site",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/Comment.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/cmp-nvim-lsp",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/editorconfig.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/grammar-guard.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/gruvbox",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/impatient.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/indent-blankline.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/lightspeed.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/matchparen.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/numb.nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/nvim-autopairs",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/nvim-lspconfig",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/nvim-treesitter-textsubjects",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/packer.nvim",
+        "/usr/share/nvim/runtime",
+        "/usr/lib/nvim",
+        "/home/duck/.local/share/nvim/site/pack/packer/start/cmp-nvim-lsp/after",
+        "/usr/share/vim/vimfiles",
+        "${3rd}/luassert/library"
+    ]
+}
