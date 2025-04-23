@@ -24,14 +24,14 @@ vim.g.loaded_node_provider = 0
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
-    lazypath,
-  })
+    vim.fn.system({
+        "git",
+        "clone",
+        "--filter=blob:none",
+        "https://github.com/folke/lazy.nvim.git",
+        "--branch=stable", -- latest stable release
+        lazypath,
+    })
 end
 
 vim.opt.rtp:prepend(lazypath)
@@ -48,8 +48,8 @@ vim.g.cursorhold_updatetime = 4000
 local group = vim.api.nvim_create_augroup("fix_cursorhold", {})
 vim.api.nvim_clear_autocmds({ group = group })
 
-local cursorhold_timer = vim.loop.new_timer()
-local cursorholdi_timer = vim.loop.new_timer()
+local cursorhold_timer = vim.uv.new_timer()
+local cursorholdi_timer = vim.uv.new_timer()
 
 vim.api.nvim_create_autocmd("CursorMoved", {
     group = group,
@@ -87,8 +87,7 @@ require("plugins")
 vim.o.showtabline = 2
 vim.o.signcolumn = "yes"
 
--- Use first screen draw autocmd?
-local lazytime = 50
+-- TODO: Fix this
 
 vim.fn.sign_define(
     "DiagnosticSignError",
@@ -111,8 +110,9 @@ vim.diagnostic.config({ severity_sort = true })
 
 local opts = { noremap = true, silent = true }
 
-vim.keymap.set("n", "[e", vim.diagnostic.goto_prev, opts)
-vim.keymap.set("n", "]e", vim.diagnostic.goto_next, opts)
+vim.keymap.set("n", "[e", function() vim.diagnostic.jump({ count = 1, float = true }) end, opts)
+vim.keymap.set("n", "]e", function() vim.diagnostic.jump({ count = -1, float = true }) end, opts)
+
 vim.keymap.set("n", "<leader>e", function()
     vim.diagnostic.open_float(nil, { scope = "line" })
 end, opts)

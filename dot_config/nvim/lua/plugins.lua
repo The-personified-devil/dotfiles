@@ -16,7 +16,7 @@ require("lazy").setup({
         priority = 500,
         config = function()
             vim.o.foldcolumn = '1' -- '0' is not bad
-            vim.o.foldlevel = 99 -- Using ufo provider need a large value, feel free to decrease the value
+            vim.o.foldlevel = 99   -- Using ufo provider need a large value, feel free to decrease the value
             vim.o.foldlevelstart = 99
             vim.o.foldenable = true
 
@@ -76,7 +76,7 @@ require("lazy").setup({
   				hi link TroubleSignInformation GruvboxBlue
   				hi link TroubleFoldIcon GruvboxGreen
 				hi link TroubleCount GruvboxGreen
-			]]        )
+			]])
         end
     },
     -- Does it properly detect trouble when it's loaded afterwards
@@ -89,7 +89,8 @@ require("lazy").setup({
     -- Load only for supported file types?
     {
         "neovim/nvim-lspconfig",
-        dependencies = { "hrsh7th/cmp-nvim-lsp", },
+        dependencies = { 'saghen/blink.cmp' },
+        -- dependencies = { "hrsh7th/cmp-nvim-lsp", },
         config = function()
             require("lsp")
         end,
@@ -99,22 +100,73 @@ require("lazy").setup({
         "brymer-meneses/grammar-guard.nvim",
         dependencies = { "nvim-lspconfig" },
     },
-    -- Configure
-    { "L3MON4D3/LuaSnip" },
     {
-        "hrsh7th/nvim-cmp",
-        event = "InsertEnter",
-        dependencies = {
-            { "hrsh7th/cmp-buffer" },
-            { "hrsh7th/cmp-path" },
-            { "hrsh7th/cmp-nvim-lua" },
-            { "LuaSnip" }
+        'saghen/blink.cmp',
+        -- -- optional: provides snippets for the snippet source
+        -- dependencies = 'rafamadriz/friendly-snippets',
+
+        build = 'nix run .#build-plugin',
+
+        opts = {
+            keymap = {
+                ['<C-n>'] = {
+                    function(cmp)
+                        return cmp.snippet_forward()
+                    end,
+                    'select_next',
+                    'fallback'
+                },
+                ['<C-i>'] = {
+                    function(cmp)
+                        return cmp.snippet_backward()
+                    end,
+                    'select_prev',
+                    'fallback'
+                },
+                ['<C-CR>'] = { 'select_and_accept' },
+                ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
+                ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
+            },
+
+            appearance = {
+                use_nvim_cmp_as_default = true,
+                -- Set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+                -- Adjusts spacing to ensure icons are aligned
+                nerd_font_variant = 'mono'
+            },
+
+            -- default list of enabled providers defined so that you can extend it
+            -- elsewhere in your config, without redefining it, via `opts_extend`
+            sources = {
+                default = { 'lsp', 'path', 'snippets', 'buffer' },
+            },
+
+            -- experimental auto-brackets support
+            -- completion = { accept = { auto_brackets = { enabled = true } } }
+
+            -- experimental signature help support
+            -- signature = { enabled = true }
         },
-        -- "Modernize"
-        config = function()
-            require("completion")
-        end,
+        -- allows extending the enabled_providers array elsewhere in your config
+        -- without having to redefine it
+        opts_extend = { "sources.completion.enabled_providers" }
     },
+    -- Configure
+    -- { "L3MON4D3/LuaSnip" },
+    -- {
+    --     "hrsh7th/nvim-cmp",
+    --     event = "InsertEnter",
+    --     dependencies = {
+    --         { "hrsh7th/cmp-buffer" },
+    --         { "hrsh7th/cmp-path" },
+    --         { "hrsh7th/cmp-nvim-lua" },
+    --         { "LuaSnip" }
+    --     },
+    --     -- "Modernize"
+    --     config = function()
+    --         require("completion")
+    --     end,
+    -- },
     -- TODO: Fix lazy loading
     {
         "nvim-telescope/telescope.nvim",
@@ -133,12 +185,20 @@ require("lazy").setup({
             require("tele")
         end,
     },
+    -- {
+    --     "gruvbox-community/gruvbox",
+    --     priority = 1000,
+    --     config = function()
+    --         vim.cmd("colorscheme gruvbox")
+    --     end,
+    -- },
     {
-        "gruvbox-community/gruvbox",
+        "ellisonleao/gruvbox.nvim",
         priority = 1000,
         config = function()
+            require("gruvbox").setup()
             vim.cmd("colorscheme gruvbox")
-        end,
+        end
     },
     {
         "windwp/windline.nvim",
@@ -254,7 +314,6 @@ require("lazy").setup({
             })
         end,
     },
-    { "andweeb/presence.nvim", },
     {
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate",
@@ -277,16 +336,6 @@ require("lazy").setup({
                     },
                 },
             })
-
-            --          vim.o.foldmethod = "expr"
-            --          vim.o.foldexpr = "nvim_treesitter#foldexpr()"
-            --          vim.o.foldtext = "Foldfn()"
-
-            --          vim.cmd([[
-            --  				function! Foldfn()
-            --      			return getline(v:foldstart)
-            --  				endfunction
-            -- ]]        )
         end,
     },
     {
@@ -305,33 +354,10 @@ require("lazy").setup({
         end,
     },
     {
-        "nvim-treesitter/playground",
-        dependencies = { "nvim-treesitter" },
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                playground = {
-                    enable = true,
-                },
-                query_linter = {
-                    enable = true,
-                },
-            })
-        end,
-        cmd = {
-            "TSPlaygroundToggle",
-            "TSCaptureUnderCursor",
-            "TSNodeUnderCursor",
-            "TSHighlightCapturesUnderCursor",
-        },
-    },
-    {
         "numToStr/Comment.nvim",
         config = function()
             require("Comment").setup({ ignore = "^$" })
         end,
-    },
-    {
-        "gpanders/editorconfig.nvim",
     },
     -- Lazy load
     {
@@ -386,6 +412,7 @@ require("lazy").setup({
     {
         "rcarriga/nvim-dap-ui",
         -- after = { "nvim-dap" },
+        dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
         config = function()
             local dap, dapui = require("dap"), require("dapui")
 
@@ -432,12 +459,6 @@ require("lazy").setup({
             end, { silent = true })
         end,
     },
-    -- {
-    --     "ggandor/lightspeed.nvim",
-    --     config = function()
-    --         require("lightspeed").setup({})
-    --     end,
-    -- },
     {
         "ggandor/leap.nvim",
         config = function()
@@ -495,6 +516,7 @@ require("lazy").setup({
         "nvim-neorg/neorg",
         -- build = ":Neorg sync-parsers",
         -- dependencies = "plenary.nvim",
+        version = "*",
         config = function()
             require("neorg").setup({
                 load = {
@@ -518,14 +540,21 @@ require("lazy").setup({
         end,
         ft = "norg",
         cmd = "NeorgStart",
-    }
-    ,
-    {
-        "Julian/lean.nvim"
     },
     {
         "folke/neoconf.nvim",
-    }
+    },
+    -- language specific shenanigans
+    {
+        "Julian/lean.nvim",
+        ft = "lean"
+    },
+    {
+        'chomosuke/typst-preview.nvim',
+        ft = "typst",
+        version = '1.*',
+        opts = {}, -- lazy.nvim will implicitly calls `setup {}`
+    },
 })
 
 -- require("core").process_definition(require("modules.ui.plugins"))

@@ -1,17 +1,16 @@
 local M =
 {
     "neovim/nvim-lspconfig",
-    dependencies = { "hrsh7th/cmp-nvim-lsp", },
 }
 
 require("neoconf").setup({
-  -- override any of the default settings here
+    -- override any of the default settings here
 })
 
 local nvim_lsp = require("lspconfig")
 local util = vim.lsp.util
 
-local on_attach = function(_, bufnr)
+local on_attach = function(client, bufnr)
     local function map(...)
         vim.keymap.set(...)
     end
@@ -50,36 +49,39 @@ local on_attach = function(_, bufnr)
     vim.api.nvim_set_hl(0, "LspReferenceRead", { underline = true })
     vim.api.nvim_set_hl(0, "LspReferenceWrite", { underline = true })
 
-    local group = vim.api.nvim_create_augroup("lsp_document_highlight", {})
+    -- error(client)
+    if client.supports_method('textDocument/documentHighlight') then
+        local group = vim.api.nvim_create_augroup("lsp_document_highlight", {})
 
-    vim.api.nvim_clear_autocmds({ group = group, buffer = bufnr })
+        vim.api.nvim_clear_autocmds({ group = group, buffer = bufnr })
 
-    vim.api.nvim_create_autocmd("CursorHold", {
-        group = group,
-        buffer = bufnr,
-        callback = function()
-            vim.lsp.buf.document_highlight()
-        end,
-    })
+        vim.api.nvim_create_autocmd("CursorHold", {
+            group = group,
+            buffer = bufnr,
+            callback = function()
+                vim.lsp.buf.document_highlight()
+            end,
+        })
 
-    vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-        group = group,
-        buffer = bufnr,
-        callback =  function(ev)
-            vim.lsp.buf.clear_references(ev.buf)
-        end,
-    })
+        vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+            group = group,
+            buffer = bufnr,
+            callback = function()
+                vim.lsp.buf.clear_references()
+            end,
+        })
+    end
 end
 
 local runtime_path = vim.split(package.path, ";")
 table.insert(runtime_path, "lua/?.lua")
 table.insert(runtime_path, "lua/?/init.lua")
 
-require('lean').setup{
-  abbreviations = { builtin = true },
-  lsp = { on_attach = on_attach },
-  -- lsp3 = { on_attach = on_attach },
-  mappings = true,
+require('lean').setup {
+    abbreviations = { builtin = true },
+    lsp = { on_attach = on_attach },
+    -- lsp3 = { on_attach = on_attach },
+    mappings = true,
 }
 
 local servers = {
@@ -107,14 +109,14 @@ local servers = {
                 --         "--bins",
                 --         -- "--all-features",
                 --         "--target",
-                --         "x86_64-unknown-atomkern", 
+                --         "x86_64-unknown-atomkern",
                 --         -- "kernel/x64.json",
                 --     },
                 -- },
             },
         },
     },
-    ltex = { settings = { ltex = { enabled = { "latex", "tex", "bibtex", "markdown" }, language = "de-DE" } } },
+    -- ltex = { settings = { ltex = { enabled = { "latex", "tex", "bibtex", "markdown" }, language = "de-DE" } } },
     texlab = { settings = { texlab = { latexindent = { modifyLineBreaks = true } } } },
     lua_ls = {
         cmd = { "lua-language-server", "-E", "/usr/share/lua-language-server/main.lua" },
@@ -138,6 +140,12 @@ local servers = {
         },
     },
     hls = {},
+    tinymist = {
+        settings = {
+            formatterMode = "typstyle",
+        },
+    },
+    slangd = {},
 }
 
 local function handler(_, result, ctx, config)
@@ -170,10 +178,9 @@ function Callfuck()
     vim.lsp.buf_request(0, "textDocument/hover", vim.lsp.util.make_position_params(), handler)
 end
 
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-local cmp_caps = require("cmp_nvim_lsp").default_capabilities()
-vim.tbl_deep_extend("force", capabilities, cmp_caps)
+local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+-- TODO: What to do with this?
 capabilities.experimental = {
     hoverActions = true,
     -- hoverRange = true,
